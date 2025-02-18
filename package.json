@@ -1,5 +1,5 @@
 {
-  "name": "Bakend_IRCTC",
+  "name": "Backend_IRCTC",
   "version": "1.0.0",
   "description": "Railway Ticket Booking Backend",
   "main": "index.js",

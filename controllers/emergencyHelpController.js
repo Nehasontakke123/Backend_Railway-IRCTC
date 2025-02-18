@@ -1,7 +1,7 @@
 import EmergencyHelp from "../models/emergencyHelpModel.js";
-import { sendSMS } from "../services/twilioService.js";
+// import { sendSMS } from "../services/twilioService.js";
 
-// ✅ Send Emergency Alert
+//  Send Emergency Alert
 export const sendEmergencyAlert = async (req, res) => {
     try {
         console.log("📌 Received Emergency Request:", req.body);
@@ -13,10 +13,10 @@ export const sendEmergencyAlert = async (req, res) => {
             return res.status(400).json({ error: "All fields are required!" });
         }
 
-        // ✅ Create New Emergency Request
+        //  Create New Emergency Request
         const newRequest = new EmergencyHelp({ name, age, mobile, location, message, category });
 
-        // ✅ Save Data to MongoDB
+        //  Save Data to MongoDB
         await newRequest.save();
 
         console.log("✅ Emergency Request Saved!", newRequest);
@@ -27,7 +27,7 @@ export const sendEmergencyAlert = async (req, res) => {
     }
 };
 
-// ✅ Fetch All Emergency Requests
+//  Fetch All Emergency Requests
 export const getAllEmergencyRequests = async (req, res) => {
     try {
         const requests = await EmergencyHelp.find().sort({ createdAt: -1 });
@@ -43,41 +43,7 @@ export const getAllEmergencyRequests = async (req, res) => {
 
 
 
-// ✅ Emergency Request Create + SMS Alert
-// export const sendEmergencyAlert = async (req, res) => {
-//     try {
-//         console.log("📌 Received Emergency Request:", req.body);
-
-//         const { name, age, mobile, location, message, category } = req.body;
-//         if (!name || !age || !mobile || !location || !message || !category) {
-//             return res.status(400).json({ error: "All fields are required!" });
-//         }
-
-//         // ✅ Create Emergency Request
-//         const newRequest = new EmergencyHelp({ name, age, mobile, location, message, category });
-//         await newRequest.save();
-
-//         // ✅ Send SMS Alert
-//         const smsMessage = `🚨 Emergency Alert! \nName: ${name} \nCategory: ${category} \nLocation: ${location} \nMessage: ${message}`;
-//         await sendSMS(process.env.ADMIN_PHONE_NUMBER, smsMessage);
-
-//         console.log("✅ Emergency Request Saved & SMS Sent!");
-//         res.status(201).json({ message: "Emergency request sent successfully & SMS alert triggered", data: newRequest });
-//     } catch (error) {
-//         console.error("❌ Error Processing Emergency Request:", error.message);
-//         res.status(500).json({ error: "Internal Server Error" });
-//     }
-// };
-
-
-
-
-
-
-
-
-
-// ✅ Update Emergency Status
+//  Update Emergency Status
 export const updateEmergencyStatus = async (req, res) => {
     try {
         const { id } = req.params;
@@ -108,7 +74,7 @@ export const updateEmergencyStatus = async (req, res) => {
     }
 };
 
-// ✅ Get Emergency Status
+//  Get Emergency Status
 export const getEmergencyStatus = async (req, res) => {
     try {
         const { id } = req.params;
