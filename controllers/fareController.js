@@ -1,32 +1,41 @@
-// import Fare from "../models/fareModel.js";
-import fare from '../models/FareModel'
+import { predictFareLogic, saveFareData } from "../services/fareService.js";
 
+/**
+ * 🎯 Predicts the fare dynamically based on demand.
+ */
 export const predictFareController = async (req, res) => {
   try {
     const { source, destination, date } = req.query;
+
     if (!source || !destination || !date) {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
-    const baseFare = 500;
-    const demandFactor = 1.5 + Math.random(); // Dynamic pricing
-    const predictedFare = baseFare * demandFactor;
-    res.json({ success: true, predictedFare: Math.round(predictedFare) });
+
+    const predictedFare = await predictFareLogic(source, destination, date);
+    
+    res.status(200).json({ success: true, predictedFare });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error in predictFareController:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
+/**
+ * 🎯 Stores the fare data in the database.
+ */
 export const saveFareController = async (req, res) => {
   try {
     const { trainNumber, baseFare, demandFactor } = req.body;
+
     if (!trainNumber || !baseFare || !demandFactor) {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
-    const finalFare = baseFare * demandFactor;
-    const newFare = new Fare({ trainNumber, baseFare, demandFactor, finalFare });
-    await newFare.save();
-    res.json({ success: true, message: "Fare data saved successfully", fare: newFare });
+
+    const savedFare = await saveFareData(trainNumber, baseFare, demandFactor);
+
+    res.status(201).json({ success: true, message: "Fare data saved successfully", fare: savedFare });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error in saveFareController:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };

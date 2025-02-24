@@ -1,4 +1,4 @@
-import Fare from "../models/fareModel.js";
+import Fare from "../models/FareModel.js";
 
 // 🎯 AI-based Fare Prediction
 export const predictFareLogic = async (source, destination, date) => {
