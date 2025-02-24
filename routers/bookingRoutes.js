@@ -1,24 +1,11 @@
-// import express from "express";
-// import { bookTicketHandler, getUserBookingsHandler } from "../controllers/bookingController.js";
-
-// const bookingRoutes = express.Router();
-
-// bookingRoutes.post("/book", bookTicketHandler);
-// bookingRoutes.get("/my-bookings/:userId", getUserBookingsHandler);
-
-// export default bookingRoutes;
-
-
-
-
-
-
 import express from "express";
-import { bookTicketHandler, getUserBookingsHandler } from "../controllers/bookingController.js";
+import { bookTicket, getBookingsByUser, getPNRStatus, processVoiceCommand } from "../controllers/bookingController.js";
 
 const bookingRoutes = express.Router();
 
-bookingRoutes.post("/book", bookTicketHandler);
-bookingRoutes.get("/my-bookings/:userId", getUserBookingsHandler);
+bookingRoutes.post("/voice-booking", processVoiceCommand);
+bookingRoutes.post("/book-ticket", bookTicket);
+bookingRoutes.get("/pnr-status/:pnr", getPNRStatus);
+bookingRoutes.get("/user/:userId", getBookingsByUser);
 
 export default bookingRoutes;

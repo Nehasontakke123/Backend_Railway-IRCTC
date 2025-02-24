@@ -1,4 +1,6 @@
 import { saveOfflineBooking, processOfflineBookings, fetchOfflineBookings } from "../services/offlineBookingService.js";
+import OfflineBooking from "../models/offlineBookingModel.js";
+
 
 export const createOfflineBooking = async (req, res) => {
     try {
@@ -10,6 +12,35 @@ export const createOfflineBooking = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+
+// Update Booking Status
+export const updateBookingStatus = async (req, res) => {
+    try {
+      const { status } = req.body;
+      const { id } = req.params;
+  
+      const updatedBooking = await OfflineBooking.findByIdAndUpdate(
+        id,
+        { status },
+        { new: true }
+      );
+  
+      if (!updatedBooking) {
+        return res.status(404).json({ error: "Booking not found!" });
+      }
+  
+      res.json({ message: "Booking status updated successfully!", updatedBooking });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update booking status!" });
+    }
+  };
+
+
+
+
+
+
 
 export const syncOfflineBookings = async (req, res) => {
     try {

@@ -1,114 +1,55 @@
-// import { registerUser, loginUser } from "../services/authService.js";
-
-// export const register = async (req, res) => {
-//     try {
-//         const response = await registerUser(req.body.name, req.body.email, req.body.password);
-//         res.status(201).json(response);
-//     } catch (error) {
-//         res.status(400).json({ error: error.message });
-//     }
-// };
-
-// export const login = async (req, res) => {
-//     try {
-//         const response = await loginUser(req.body.email, req.body.password);
-//         res.status(200).json(response);
-//     } catch (error) {
-//         res.status(400).json({ error: error.message });
-//     }
-// };
-
-
-
-
-
-
-
-
-
-// // Authentication/authController.js
-// import bcrypt from "bcryptjs";
-// import jwt from "jsonwebtoken";
-// import usersModel from "../models/usersModel.js";
-
-// export const registerUser = async (req, res) => {
-//     try {
-//         const { name, email, password } = req.body;
-//         const existingUser = await usersModel.findOne({ email });
-//         if (existingUser) return res.status(400).json({ error: "User already exists" });
-
-//         const hashedPassword = await bcrypt.hash(password, 10);
-//         const newUser = new usersModel({ name, email, password: hashedPassword });
-//         await newUser.save();
-
-//         res.status(201).json({ message: "User registered successfully" });
-//     } catch (error) {
-//         console.error("❌ Error Registering User:", error.message);
-//         res.status(500).json({ error: "Internal Server Error" });
-//     }
-// };
-
-// export const loginUser = async (req, res) => {
-//     try {
-//         const { email, password } = req.body;
-//         const user = await usersModel.findOne({ email });
-//         if (!user) return res.status(400).json({ error: "User not found" });
-
-//         const isMatch = await bcrypt.compare(password, user.password);
-//         if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
-
-//         const token = jwt.sign({ id: user._id }, process.env.PRIVATEKEY, { expiresIn: "1h" });
-//         res.json({ token, user });
-//     } catch (error) {
-//         console.error("❌ Error Logging In:", error.message);
-//         res.status(500).json({ error: "Internal Server Error" });
-//     }
-// };
-
-
-
-
-
-
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/usersModel.js";
 
 export const registerUser = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
-        const existingUser = await User.findOne({ email });
-        if (existingUser) return res.status(400).json({ error: "User already exists" });
+        const { userName, fullName, email, mobile, password, captcha } = req.body;
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ name, email, password: hashedPassword });
-        await newUser.save();
+        // Check if user already exists
+        let user = await User.findOne({ email });
+        if (user) {
+            return res.status(400).json({ error: "Email already registered" });
+        }
 
-        res.status(201).json({ message: "User registered successfully" });
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create new user
+        user = new User({ userName, fullName, email, mobile, password: hashedPassword, captcha });
+        await user.save();
+
+        res.status(201).json({ message: "User registered successfully!" });
     } catch (error) {
-        console.error("❌ Error Registering User:", error.message);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
 
+
+
+
 export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        // Find user by email
         const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ error: "User not found" });
+        if (!user) {
+            return res.status(400).json({ error: "User not found! Please register first." });
+        }
 
+        // Compare passwords
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
+        if (!isMatch) {
+            return res.status(400).json({ error: "Invalid credentials!" });
+        }
 
-        const token = jwt.sign({ id: user._id }, process.env.PRIVATEKEY, { expiresIn: "1h" });
+        // Generate JWT Token
+        const token = jwt.sign({ userId: user._id }, "PRIVATE_KEY", { expiresIn: "1h" });
 
-        // ✅ Token DB मध्ये store करतो
-        user.tokens.push({ token });
-        await user.save();
-
-        res.json({ token, user });
+        res.json({ message: "Login successful", token });
     } catch (error) {
-        console.error("❌ Error Logging In:", error.message);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };

@@ -1,117 +1,69 @@
-// import { bookTicket, getBookingsByUser } from "../services/bookingService.js";
-// import bookingModel from "../models/bookingModel.js";
 
-// export const bookTicketHandler = async (req, res) => {
-//     try {
-//         const response = await bookTicket(req.body);
-//         res.status(201).json(response);
-//     } catch (error) {
-//         res.status(400).json({ error: error.message });
-//     }
-// };
+import Booking from "../models/bookingModel.js";
 
-// export const getUserBookingsHandler = async (req, res) => {
-//     try {
-//         const bookings = await getBookingsByUser(req.params);
-//         res.status(200).json(bookings);
-//     } catch (error) {
-//         res.status(400).json({ error: error.message });
-//     }
-// };
+import { predictFareLogic } from "../services/fareService.js";
 
+import { analyzeVoiceCommand } from "../services/voiceService.js";
 
-
-
-// // Create a new booking
-// export const createBooking = async (req, res) => {
-//     try {
-//         const {  trainName, trainNumber, date, seatClass, passengers } = req.body;
-
-//         const newBooking = new Booking({
-//             // userId,
-//             trainName,
-//             trainNumber,
-//             date,
-//             seatClass,
-//             passengers,
-//         });
-
-//         await newBooking.save();
-//         res.status(201).json({ message: "Booking successful", booking: newBooking });
-//     } catch (error) {
-//         res.status(500).json({ error: error.message });
-//     }
-// };
-
-
-
-
-
-// import { bookTicket, getBookingsByUser } from "../services/bookingService.js";
-
-// export const bookTicketHandler = async (req, res) => {
-//     try {
-//         const response = await bookTicket(req.body);
-//         res.status(201).json(response);
-//     } catch (error) {
-//         res.status(400).json({ error: error.message });
-//     }
-// };
-
-// export const getUserBookingsHandler = async (req, res) => {
-//     try {
-//         const bookings = await getBookingsByUser(req.params.userId);
-//         res.status(200).json(bookings);
-//     } catch (error) {
-//         res.status(400).json({ error: error.message });
-//     }
-// };
-
-
-
-
-
-
-
-// import { bookTicket, getBookingsByUser } from "../services/bookingService.js";
-// import bookingModel from "../models/bookingModel.js";
-
-// export const bookTicketHandler = async (req, res) => {
-//     try {
-//         console.log("Received Data:", req.body); // Debugging
-//         const response = await bookTicket(req.body);
-//         res.status(201).json(response);
-//     } catch (error) {
-//         console.error("Error:", error.message); // Debugging
-//         res.status(400).json({ error: error.message });
-//     }
-// };
-
-
-
-
-
-
-import { bookTicket, getBookingsByUser } from "../services/bookingService.js";
-
-export const bookTicketHandler = async (req, res) => {
-    try {
-        console.log("Received Data:", req.body); // Debugging
-        const response = await bookTicket(req.body);
-        res.status(201).json(response);
-    } catch (error) {
-        console.error("Error:", error.message); // Debugging
-        res.status(400).json({ error: error.message });
+// 🎯 Book Ticket
+export const bookTicket = async (req, res) => {
+  try {
+    const { userId, trainName, trainNumber, passengers, baseFare, demandFactor } = req.body;
+    
+    if (!userId || !trainName || !trainNumber || !passengers.length) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
     }
+
+    const finalFare = predictFare(baseFare, demandFactor);
+    
+    const newBooking = new Booking({ userId, trainName, trainNumber, passengers, finalFare });
+    await newBooking.save();
+
+    res.json({ success: true, message: "Ticket booked successfully", booking: newBooking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
-// ✅ `getUserBookingsHandler` function properly export कर
-export const getUserBookingsHandler = async (req, res) => {
-    try {
-        const bookings = await getBookingsByUser(req.params.userId);
-        res.status(200).json(bookings);
-    } catch (error) {
-        console.error("Error:", error.message);
-        res.status(400).json({ error: error.message });
+// 🎯 Get Bookings by User
+export const getBookingsByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const bookings = await Booking.find({ userId });
+
+    if (!bookings.length) {
+      return res.status(404).json({ success: false, message: "No bookings found" });
     }
+
+    res.json({ success: true, bookings });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 🎯 Get PNR Status (Fixing the error)
+export const getPNRStatus = async (req, res) => {
+  try {
+    const { pnr } = req.params;
+    const booking = await Booking.findOne({ _id: pnr });
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "PNR not found" });
+    }
+
+    res.json({ success: true, pnrStatus: booking.status });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 🎯 Process Voice Commands
+export const processVoiceCommand = async (req, res) => {
+  try {
+    const { command } = req.body;
+    const response = analyzeVoiceCommand(command);
+    res.json({ success: true, response });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };

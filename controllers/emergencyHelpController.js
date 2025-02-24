@@ -1,78 +1,106 @@
 import EmergencyHelp from "../models/emergencyHelpModel.js";
-// import { sendSMS } from "../services/twilioService.js";
-
-//  Send Emergency Alert
+import mongoose from "mongoose";
 export const sendEmergencyAlert = async (req, res) => {
     try {
         console.log("📌 Received Emergency Request:", req.body);
 
         const { name, age, mobile, location, message, category } = req.body;
-        
+
         // 🛑 Validate Required Fields
         if (!name || !age || !mobile || !location || !message || !category) {
             return res.status(400).json({ error: "All fields are required!" });
         }
 
-        //  Create New Emergency Request
-        const newRequest = new EmergencyHelp({ name, age, mobile, location, message, category });
+        let parsedLocation;
 
-        //  Save Data to MongoDB
+        // ✅ Convert String Location (if needed) to Object `{ lat, lng }`
+        if (typeof location === "string") {
+            const match = location.match(/Lat:\s*([\d.-]+),\s*Lng:\s*([\d.-]+)/);
+            if (match) {
+                parsedLocation = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+            } else {
+                return res.status(400).json({ error: "Invalid location format!" });
+            }
+        } else {
+            parsedLocation = location;
+        }
+
+        // 🛑 Ensure `lat` & `lng` Exist
+        if (!parsedLocation.lat || !parsedLocation.lng) {
+            return res.status(400).json({ error: "Location must include lat and lng!" });
+        }
+
+        // ✅ Create Emergency Request
+        const newRequest = new EmergencyHelp({
+            name,
+            age,
+            mobile,
+            location: parsedLocation, // Save as `{ lat, lng }` object
+            message,
+            category
+        });
+
+        // Save to MongoDB
         await newRequest.save();
 
-        console.log("✅ Emergency Request Saved!", newRequest);
+        console.log("✅ Emergency Request Saved:", newRequest);
         res.status(201).json({ message: "Emergency request sent successfully", data: newRequest });
+
     } catch (error) {
         console.error("❌ Error Saving Emergency Request:", error.message);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
 
-//  Fetch All Emergency Requests
+
+
+
+
+
+
+
+// 🛑 Fix API Response in Controller
 export const getAllEmergencyRequests = async (req, res) => {
     try {
-        const requests = await EmergencyHelp.find().sort({ createdAt: -1 });
+        const requests = await EmergencyHelp.find();  // 🔹 Remove `sort({ createdAt: -1 })` if needed
+        console.log("📌 Fetched Emergency Requests:", requests);
         res.status(200).json(requests);
     } catch (error) {
-        console.error("❌ Error Fetching Emergency Requests:", error.message);
+        console.error("❌ Error Fetching Requests:", error.message);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
 
 
-
-
-
-
-//  Update Emergency Status
 export const updateEmergencyStatus = async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    console.log(`🔹 Updating Status for ID: ${id} -> ${status}`); // 🟢 Debugging
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        console.log("❌ Invalid Request ID:", id);
+        return res.status(400).json({ error: "Invalid request ID" });
+    }
+
     try {
-        const { id } = req.params;
-        const { status } = req.body;
+        const request = await EmergencyHelp.findByIdAndUpdate(id, { status }, { new: true });
 
-        // 🛑 Validate Status
-        if (!["pending", "in-progress", "resolved"].includes(status)) {
-            return res.status(400).json({ error: "Invalid status value. Allowed: pending, in-progress, resolved" });
-        }
-
-        const request = await EmergencyHelp.findById(id);
         if (!request) {
+            console.log("❌ Emergency Request Not Found for ID:", id);
             return res.status(404).json({ error: "Emergency request not found" });
         }
 
-        if (request.status === status) {
-            return res.status(200).json({ message: `Status is already '${status}'` });
-        }
-
-        request.status = status;
-        await request.save();
-
-        console.log(`✅ Status Updated: ${request.status}`);
+        console.log("✅ Status Updated Successfully:", request);
         res.status(200).json({ message: "Status updated successfully", status: request.status });
     } catch (error) {
-        console.error("❌ Error Updating Status:", error.message);
+        console.error("❌ Error Updating Emergency Status:", error.message);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+
+
 
 //  Get Emergency Status
 export const getEmergencyStatus = async (req, res) => {
