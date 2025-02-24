@@ -1,4 +1,5 @@
-import Fare from "../models/fareModel.js";
+// import Fare from "../models/fareModel.js";
+import fare from '../models/FareModel'
 
 export const predictFareController = async (req, res) => {
   try {
